@@ -8,10 +8,15 @@ hotels = [
     {"id": 2, "title": "Дубай", "name": "dubay"},
 ]
 
-@app.get("/hotels")
+@app.get(
+    "/hotels",
+    summary="Получение списка отелей",
+    description="Запрос на получение списка отелей согласно фильтру"
+)
 def get_hotels(
-        id: int | None = Query(None, description="Идентификатор отеля 2"),
-        title: str | None = Query(None, description = "Название отеля")
+        id: int | None = Query(None, description="Идентификатор отеля"),
+        title: str | None = Query(None, description = "Название отеля"),
+        name: str | None = Query(None, description = "Наименование отеля")
 ):
     hotels_=[]
     for hotel in hotels:
@@ -19,10 +24,12 @@ def get_hotels(
             continue
         if title and hotel["title"] != title:
             continue
+        if name and hotel["name"] != name:
+            continue
         hotels_.append(hotel)
     return hotels_
 
-@app.post("/hotels")
+@app.post("/hotels", summary="Добавление нового отеля")
 def create_hotel(
         title: str = Body(embed = True),
         name: str = Body(embed = True),
@@ -35,32 +42,34 @@ def create_hotel(
     })
     return {"status": "ok"}
 
-@app.delete("/hotels/{hotel_id}")
+@app.delete("/hotels/{hotel_id}", summary="Удаление отеля")
 def delete_hotel(hotel_id: int):
     global hotels
     hotels = [hotel for hotel in hotels if hotel["id"] != hotel_id]
     return {"status": "ok"}
 
-@app.put("/hotels/{hotel_id}")
+@app.put("/hotels/{hotel_id}", summary="Изменение отеля")
 def update_hotel(
         hotel_id: int,
         title: str = Body(embed = True),
         name: str = Body(embed = True),
 ):
     global hotels
+    #hotels = [hotel for hotel in hotels if hotel["id"] == hotel_id][0]
     for hotel in hotels:
         if hotel["id"] == hotel_id:
             hotel["title"] = title
             hotel["name"] = name
     return {"status": "ok"}
 
-@app.patch("/hotels/{hotel_id}")
+@app.patch("/hotels/{hotel_id}", summary="Частичное изменение данных об отеле")
 def update_hotel(
         hotel_id: int,
-        title: str | None = Body(None, embed = True), #Query(None, description = "Название отеля"),
-        name: str | None = Body(None, embed = True), #Query(None, description = "Наименование отеля"),
+        title: str | None = Body(None, embed = True),
+        name: str | None = Body(None, embed = True),
 ):
     global hotels
+    # hotels = [hotel for hotel in hotels if hotel["id"] == hotel_id][0]
     for hotel in hotels:
         if hotel["id"] == hotel_id:
             if title:
