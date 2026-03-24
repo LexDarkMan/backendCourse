@@ -1,82 +1,27 @@
 from fastapi import FastAPI, Query, Body
+from fastapi.openapi.docs import (
+    get_swagger_ui_html,
+    get_swagger_ui_oauth2_redirect_html,
+)
 import uvicorn
 
-app = FastAPI()
+from hotels import router as router_hotels
 
-hotels = [
-    {"id": 1, "title": "Sochi", "name": "sochi"},
-    {"id": 2, "title": "Дубай", "name": "dubay"},
-]
+app = FastAPI(docs_url=None) #app = FastAPI()
 
-@app.get(
-    "/hotels",
-    summary="Получение списка отелей",
-    description="Запрос на получение списка отелей согласно фильтру"
-)
-def get_hotels(
-        id: int | None = Query(None, description="Идентификатор отеля"),
-        title: str | None = Query(None, description = "Название отеля"),
-        name: str | None = Query(None, description = "Наименование отеля")
-):
-    hotels_=[]
-    for hotel in hotels:
-        if id and hotel["id"] != id:
-            continue
-        if title and hotel["title"] != title:
-            continue
-        if name and hotel["name"] != name:
-            continue
-        hotels_.append(hotel)
-    return hotels_
+app.include_router(router_hotels)
 
-@app.post("/hotels", summary="Добавление нового отеля")
-def create_hotel(
-        title: str = Body(embed = True),
-        name: str = Body(embed = True),
-):
-    global hotels
-    hotels.append({
-        "id": hotels[-1]["id"] + 1,
-        "title": title,
-        "name": name
-    })
-    return {"status": "ok"}
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Swagger UI",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        swagger_js_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js",
+        swagger_css_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css",
+    )
 
-@app.delete("/hotels/{hotel_id}", summary="Удаление отеля")
-def delete_hotel(hotel_id: int):
-    global hotels
-    hotels = [hotel for hotel in hotels if hotel["id"] != hotel_id]
-    return {"status": "ok"}
-
-@app.put("/hotels/{hotel_id}", summary="Изменение отеля")
-def update_hotel(
-        hotel_id: int,
-        title: str = Body(embed = True),
-        name: str = Body(embed = True),
-):
-    global hotels
-    #hotels = [hotel for hotel in hotels if hotel["id"] == hotel_id][0]
-    for hotel in hotels:
-        if hotel["id"] == hotel_id:
-            hotel["title"] = title
-            hotel["name"] = name
-    return {"status": "ok"}
-
-@app.patch("/hotels/{hotel_id}", summary="Частичное изменение данных об отеле")
-def update_hotel(
-        hotel_id: int,
-        title: str | None = Body(None, embed = True),
-        name: str | None = Body(None, embed = True),
-):
-    global hotels
-    # hotels = [hotel for hotel in hotels if hotel["id"] == hotel_id][0]
-    for hotel in hotels:
-        if hotel["id"] == hotel_id:
-            if title:
-                hotel["title"] = title
-            if name:
-                hotel["name"] = name
-    return {"status": "ok"}
 
 if __name__ == "__main__":
   uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+  #uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=False, workers=30)
