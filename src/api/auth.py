@@ -1,9 +1,6 @@
-
-
 from fastapi import APIRouter, HTTPException, Response
 
-
-from config import settings
+from src.api.dependencies import UserIdDep
 from src.services.auth import AuthService
 from src.repositories.users import UsersRepository
 from src.database import async_session_maker
@@ -12,8 +9,17 @@ from src.schemas.users import UserRequestAdd, UserAdd
 
 router = APIRouter(prefix="/auth", tags=["Авторизация и аутентификация"])
 
-
-
+@router.post("/register")
+async def register_user(
+        data: UserRequestAdd,
+):
+    #hashed_password = pwd_context.hash(data.password)
+    hashed_password = AuthService().hash_password(data.password)
+    new_user_data = UserAdd(email=data.email, hashed_password=hashed_password)
+    async with async_session_maker() as session:
+        await UsersRepository(session).add(new_user_data)
+        await session.commit()
+    return {"status": "ok"}
 
 @router.post("/login")
 async def login_user(
@@ -33,14 +39,10 @@ async def login_user(
         response.set_cookie("access_token", access_token)
         return {"access_token": access_token}
 
-@router.post("/register")
-async def register_user(
-        data: UserRequestAdd,
+@router.get("/me")
+async def get_me(
+        user_id: UserIdDep
 ):
-    #hashed_password = pwd_context.hash(data.password)
-    hashed_password = AuthService().hash_password(data.password)
-    new_user_data = UserAdd(email=data.email, hashed_password=hashed_password)
     async with async_session_maker() as session:
-        await UsersRepository(session).add(new_user_data)
-        await session.commit()
-    return {"status": "ok"}
+        user = await UsersRepository(session).get_one_or_none(id=user_id)
+        return user
