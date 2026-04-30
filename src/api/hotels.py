@@ -42,6 +42,7 @@ async def get_hotels(
 async def get_hotel(hotel_id: int):
     async with async_session_maker() as session:
         return await HotelsRepository(session).get_one_or_none(id=hotel_id)
+
 @router.post("", summary="Добавление нового отеля")
 async def create_hotel(hotel_data: HotelAdd = Body(openapi_examples={
     "1": {"summary": "Сочи", "value":{
@@ -79,7 +80,7 @@ async def update_hotel(hotel_id: int, hotel_data: HotelAdd):
         await session.commit()
     return {"status": "ok"}
 
-@router.patch("/hotels/{hotel_id}", summary="Частичное изменение данных об отеле")
+@router.patch("/{hotel_id}", summary="Частичное изменение данных об отеле")
 async def update_hotel(
         hotel_id: int,
         hotel_data: HotelPATCH
